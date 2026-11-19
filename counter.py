@@ -15,7 +15,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-ASSETS = Path(__file__).parent / "assets"
 MARK_OPEN = "<!-- CLOCK:START -->"
 MARK_CLOSE = "<!-- CLOCK:END -->"
 
@@ -123,20 +122,11 @@ def card_svg(months, days, hours, total, theme):
 """
 
 
-def write_cards(counts, total, directory=ASSETS):
+def write_cards(counts, total, directory):
     directory = Path(directory)
     directory.mkdir(exist_ok=True)
     for theme in PALETTES:
         (directory / f"clock-{theme}.svg").write_text(card_svg(*counts, total, theme))
-
-
-def picture_block(text):
-    return (
-        "<picture>\n"
-        '  <source media="(prefers-color-scheme: dark)" srcset="assets/clock-dark.svg">\n'
-        f'  <img alt="{text}" src="assets/clock-light.svg" width="480">\n'
-        "</picture>"
-    )
 
 
 def update_readme(path, text):
@@ -152,18 +142,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--readme", help="rewrite the CLOCK block in this file")
     parser.add_argument(
-        "--card", action="store_true", help="also draw the SVG cards and use them in the README"
+        "--cards", metavar="DIR", help="write the light and dark SVG cards into DIR"
     )
     args = parser.parse_args()
 
     start, now = load_start(), datetime.now(timezone.utc)
     counts = elapsed(start, now)
     text = describe(*counts)
-    if args.card:
-        write_cards(counts, total_days(start, now))
+    if args.cards:
+        write_cards(counts, total_days(start, now), args.cards)
     if args.readme:
-        block = picture_block(text) if args.card else f"**{text}**"
-        update_readme(args.readme, block)
+        update_readme(args.readme, f"**{text}**")
     print(text)
 
 
