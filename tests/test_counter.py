@@ -6,7 +6,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from counter import PALETTES, card_svg, describe, elapsed, picture_block  # noqa: E402
+from counter import CARD_WIDTH, PALETTES, card_svg, describe, elapsed, picture_block, total_days  # noqa: E402
 
 LA = ZoneInfo("America/Los_Angeles")
 # A made-up start time, only used to exercise the maths.
@@ -51,16 +51,34 @@ class ElapsedTests(unittest.TestCase):
             elapsed(T0, at(2020, 1, 15, 9, 29))
 
 
+class TotalDaysTests(unittest.TestCase):
+    def test_counts_whole_days_on_the_wall_clock(self):
+        self.assertEqual(total_days(T0, T0), 0)
+        self.assertEqual(total_days(T0, at(2020, 1, 16, 9, 29)), 0)
+        self.assertEqual(total_days(T0, at(2020, 1, 16, 9, 30)), 1)
+        self.assertEqual(total_days(T0, at(2020, 7, 4, 12, 0)), 171)
+
+
 class CardTests(unittest.TestCase):
-    def test_both_themes_are_valid_svg_with_the_numbers(self):
+    def squares(self, svg):
+        return ET.fromstring(svg).findall(".//{http://www.w3.org/2000/svg}g/{http://www.w3.org/2000/svg}rect")
+
+    def test_both_themes_are_valid_svg_with_one_square_per_day(self):
         for theme in PALETTES:
-            svg = card_svg(5, 1, 20, theme)
-            root = ET.fromstring(svg)
-            self.assertTrue(root.tag.endswith("svg"))
-            self.assertIn(">5</text>", svg)
-            self.assertIn(">20</text>", svg)
-            self.assertIn(">day</text>", svg)
-            self.assertIn(">months</text>", svg)
+            svg = card_svg(5, 26, 20, 186, theme)
+            self.assertTrue(ET.fromstring(svg).tag.endswith("svg"))
+            self.assertEqual(len(self.squares(svg)), 187)
+            self.assertIn("5 months, 26 days, 20 hours", svg)
+
+    def test_today_is_the_only_outlined_square(self):
+        outlined = [r for r in self.squares(card_svg(0, 3, 1, 3, "light")) if r.get("fill") == "none"]
+        self.assertEqual(len(outlined), 1)
+
+    def test_grid_stays_inside_the_card_as_it_grows(self):
+        for total in (0, 1, 186, 365, 800):
+            for rect in self.squares(card_svg(0, 0, 0, total, "dark")):
+                right = float(rect.get("x")) + float(rect.get("width"))
+                self.assertLessEqual(right, CARD_WIDTH - 20)
 
     def test_picture_block_carries_the_text_as_alt(self):
         block = picture_block("5 months, 26 days, 20 hours")
