@@ -1,11 +1,12 @@
 import sys
 import unittest
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from counter import describe, elapsed  # noqa: E402
+from counter import PALETTES, card_svg, describe, elapsed, picture_block  # noqa: E402
 
 LA = ZoneInfo("America/Los_Angeles")
 # A made-up start time, only used to exercise the maths.
@@ -48,6 +49,23 @@ class ElapsedTests(unittest.TestCase):
     def test_before_start_raises(self):
         with self.assertRaises(ValueError):
             elapsed(T0, at(2020, 1, 15, 9, 29))
+
+
+class CardTests(unittest.TestCase):
+    def test_both_themes_are_valid_svg_with_the_numbers(self):
+        for theme in PALETTES:
+            svg = card_svg(5, 1, 20, theme)
+            root = ET.fromstring(svg)
+            self.assertTrue(root.tag.endswith("svg"))
+            self.assertIn(">5</text>", svg)
+            self.assertIn(">20</text>", svg)
+            self.assertIn(">day</text>", svg)
+            self.assertIn(">months</text>", svg)
+
+    def test_picture_block_carries_the_text_as_alt(self):
+        block = picture_block("5 months, 26 days, 20 hours")
+        self.assertIn('alt="5 months, 26 days, 20 hours"', block)
+        self.assertIn("prefers-color-scheme: dark", block)
 
 
 if __name__ == "__main__":
