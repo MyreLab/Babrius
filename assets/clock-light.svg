@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="130" viewBox="0 0 480 130" role="img" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>5 months, 26 days, 20 hours</title>
+  <rect x="1" y="1" width="478" height="128" rx="12" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="24" y="32" font-size="14" font-weight="600" fill="#1a7f37">Elapsed</text>
+  <line x1="165" y1="52" x2="165" y2="112" stroke="#d0d7de"/>
+  <line x1="315" y1="52" x2="315" y2="112" stroke="#d0d7de"/>
+  <text x="90" y="86" text-anchor="middle" font-size="42" font-weight="600" fill="#1f2328">5</text>
+  <text x="90" y="110" text-anchor="middle" font-size="13" fill="#656d76">months</text>
+  <text x="240" y="86" text-anchor="middle" font-size="42" font-weight="600" fill="#1f2328">26</text>
+  <text x="240" y="110" text-anchor="middle" font-size="13" fill="#656d76">days</text>
+  <text x="390" y="86" text-anchor="middle" font-size="42" font-weight="600" fill="#1f2328">20</text>
+  <text x="390" y="110" text-anchor="middle" font-size="13" fill="#656d76">hours</text>
+</svg>

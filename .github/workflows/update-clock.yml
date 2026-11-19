@@ -21,20 +21,20 @@ jobs:
       - name: Run tests
         run: python3 -m unittest discover -s tests
 
-      - name: Rewrite the README block
+      - name: Rewrite the README block and the card
         env:
           CLOCK_START: ${{ secrets.CLOCK_START }}
           CLOCK_TZ: ${{ secrets.CLOCK_TZ }}
-        run: python3 counter.py --readme README.md
+        run: python3 counter.py --readme README.md --card
 
       - name: Commit if the count changed
         run: |
-          if git diff --quiet README.md; then
+          if [ -z "$(git status --porcelain README.md assets)" ]; then
             echo "No change"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
+          git add README.md assets
           git commit -m "Update clock"
           git push

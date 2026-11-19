@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+ASSETS = Path(__file__).parent / "assets"
 MARK_OPEN = "<!-- CLOCK:START -->"
 MARK_CLOSE = "<!-- CLOCK:END -->"
 
@@ -67,6 +68,51 @@ def describe(months, days, hours):
     )
 
 
+PALETTES = {
+    "light": {"fill": "#f6f8fa", "stroke": "#d0d7de", "number": "#1f2328", "label": "#656d76", "accent": "#1a7f37"},
+    "dark": {"fill": "#161b22", "stroke": "#30363d", "number": "#e6edf3", "label": "#8b949e", "accent": "#3fb950"},
+}
+FONT = "-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+
+
+def card_svg(months, days, hours, theme):
+    c = PALETTES[theme]
+    columns = [(months, "month"), (days, "day"), (hours, "hour")]
+    cells = []
+    for i, (n, unit) in enumerate(columns):
+        x = 90 + i * 150
+        label = unit if n == 1 else unit + "s"
+        cells.append(
+            f'  <text x="{x}" y="86" text-anchor="middle" font-size="42" font-weight="600" fill="{c["number"]}">{n}</text>\n'
+            f'  <text x="{x}" y="110" text-anchor="middle" font-size="13" fill="{c["label"]}">{label}</text>'
+        )
+    dividers = "\n".join(
+        f'  <line x1="{x}" y1="52" x2="{x}" y2="112" stroke="{c["stroke"]}"/>' for x in (165, 315)
+    )
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="480" height="130" viewBox="0 0 480 130" role="img" font-family="{FONT}">
+  <title>{describe(months, days, hours)}</title>
+  <rect x="1" y="1" width="478" height="128" rx="12" fill="{c["fill"]}" stroke="{c["stroke"]}"/>
+  <text x="24" y="32" font-size="14" font-weight="600" fill="{c["accent"]}">Elapsed</text>
+{dividers}
+""" + "\n".join(cells) + "\n</svg>\n"
+
+
+def write_cards(counts, directory=ASSETS):
+    directory = Path(directory)
+    directory.mkdir(exist_ok=True)
+    for theme in PALETTES:
+        (directory / f"clock-{theme}.svg").write_text(card_svg(*counts, theme))
+
+
+def picture_block(text):
+    return (
+        "<picture>\n"
+        '  <source media="(prefers-color-scheme: dark)" srcset="assets/clock-dark.svg">\n'
+        f'  <img alt="{text}" src="assets/clock-light.svg" width="480">\n'
+        "</picture>"
+    )
+
+
 def update_readme(path, text):
     content = Path(path).read_text()
     head, _, rest = content.partition(MARK_OPEN)
@@ -79,11 +125,18 @@ def update_readme(path, text):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--readme", help="rewrite the CLOCK block in this file")
+    parser.add_argument(
+        "--card", action="store_true", help="also draw the SVG cards and use them in the README"
+    )
     args = parser.parse_args()
 
-    text = describe(*elapsed(load_start(), datetime.now(timezone.utc)))
+    counts = elapsed(load_start(), datetime.now(timezone.utc))
+    text = describe(*counts)
+    if args.card:
+        write_cards(counts)
     if args.readme:
-        update_readme(args.readme, f"**{text}**")
+        block = picture_block(text) if args.card else f"**{text}**"
+        update_readme(args.readme, block)
     print(text)
 
 
