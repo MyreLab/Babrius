@@ -1,7 +1,7 @@
 <!-- CLOCK:START -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/clock-dark.svg">
-  <img alt="5 months, 26 days, 20 hours" src="assets/clock-light.svg" width="480">
+  <img alt="5 months, 26 days, 21 hours" src="assets/clock-light.svg" width="480">
 </picture>
 <!-- CLOCK:END -->
 
