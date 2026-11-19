@@ -2,7 +2,7 @@ name: Update clock
 
 on:
   schedule:
-    - cron: "7 * * * *"
+    - cron: "15 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -21,20 +21,19 @@ jobs:
       - name: Run tests
         run: python3 -m unittest discover -s tests
 
-      - name: Rewrite the README block and the card
+      - name: Draw the cards
         env:
           CLOCK_START: ${{ secrets.CLOCK_START }}
           CLOCK_TZ: ${{ secrets.CLOCK_TZ }}
-        run: python3 counter.py --readme README.md --card
+        run: python3 counter.py --cards "$RUNNER_TEMP/cards"
 
-      - name: Commit if the count changed
+      - name: Publish the cards to the counter-assets branch
         run: |
-          if [ -z "$(git status --porcelain README.md assets)" ]; then
-            echo "No change"
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md assets
-          git commit -m "Update clock"
-          git push
+          git checkout --orphan counter-assets
+          git rm -rf --quiet .
+          cp "$RUNNER_TEMP"/cards/*.svg .
+          git add ./*.svg
+          git commit -q -m "Update clock"
+          git push --force origin counter-assets

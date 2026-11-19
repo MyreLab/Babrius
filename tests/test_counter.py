@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -6,7 +7,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from counter import CARD_WIDTH, PALETTES, card_svg, describe, elapsed, picture_block, total_days  # noqa: E402
+from counter import CARD_WIDTH, PALETTES, card_svg, describe, elapsed, total_days, write_cards  # noqa: E402
 
 LA = ZoneInfo("America/Los_Angeles")
 # A made-up start time, only used to exercise the maths.
@@ -80,10 +81,11 @@ class CardTests(unittest.TestCase):
                 right = float(rect.get("x")) + float(rect.get("width"))
                 self.assertLessEqual(right, CARD_WIDTH - 20)
 
-    def test_picture_block_carries_the_text_as_alt(self):
-        block = picture_block("5 months, 26 days, 20 hours")
-        self.assertIn('alt="5 months, 26 days, 20 hours"', block)
-        self.assertIn("prefers-color-scheme: dark", block)
+    def test_write_cards_makes_one_file_per_theme(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            write_cards((5, 26, 20), 186, Path(tmp) / "out")
+            names = sorted(p.name for p in (Path(tmp) / "out").iterdir())
+        self.assertEqual(names, ["clock-dark.svg", "clock-light.svg"])
 
 
 if __name__ == "__main__":
