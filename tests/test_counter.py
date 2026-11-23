@@ -7,7 +7,15 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from counter import CARD_WIDTH, PALETTES, card_svg, describe, elapsed, total_days, write_cards  # noqa: E402
+from counter import (
+    CARD_WIDTH,
+    PALETTES,
+    card_svg,
+    describe,
+    elapsed,
+    total_days,
+    write_cards,
+)
 
 LA = ZoneInfo("America/Los_Angeles")
 # A made-up start time, only used to exercise the maths.

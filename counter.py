@@ -8,10 +8,12 @@ Months and days are counted on the local wall clock. The leftover hours are
 measured in real elapsed time, so a daylight saving change never shifts the
 answer by an hour.
 """
+from __future__ import annotations
+
 import argparse
 import calendar
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -19,7 +21,7 @@ MARK_OPEN = "<!-- CLOCK:START -->"
 MARK_CLOSE = "<!-- CLOCK:END -->"
 
 
-def load_start():
+def load_start() -> datetime:
     try:
         raw, tz_name = os.environ["CLOCK_START"], os.environ["CLOCK_TZ"]
     except KeyError as missing:
@@ -27,14 +29,14 @@ def load_start():
     return datetime.fromisoformat(raw).replace(tzinfo=ZoneInfo(tz_name))
 
 
-def add_months(dt, months):
+def add_months(dt: datetime, months: int) -> datetime:
     total = dt.year * 12 + (dt.month - 1) + months
     year, month = divmod(total, 12)
     day = min(dt.day, calendar.monthrange(year, month + 1)[1])
     return dt.replace(year=year, month=month + 1, day=day)
 
 
-def elapsed(start, now):
+def elapsed(start: datetime, now: datetime) -> tuple[int, int, int]:
     """Return (months, days, hours) between start and now."""
     tz = start.tzinfo
     now = now.astimezone(tz)
@@ -52,23 +54,23 @@ def elapsed(start, now):
         days -= 1
         day_anchor = datetime.combine(anchor.date() + timedelta(days=days), anchor.time(), tz)
 
-    real = now.astimezone(timezone.utc) - day_anchor.astimezone(timezone.utc)
+    real = now.astimezone(UTC) - day_anchor.astimezone(UTC)
     hours = int(real.total_seconds() // 3600)
     return months, days, hours
 
 
-def total_days(start, now):
+def total_days(start: datetime, now: datetime) -> int:
     """Whole days since start, counted on the local wall clock."""
     now = now.astimezone(start.tzinfo)
     days = (now.date() - start.date()).days
     return days - 1 if now.time() < start.time() else days
 
 
-def plural(n, unit):
+def plural(n: int, unit: str) -> str:
     return f"{n} {unit}" if n == 1 else f"{n} {unit}s"
 
 
-def describe(months, days, hours):
+def describe(months: int, days: int, hours: int) -> str:
     return ", ".join(
         [plural(months, "month"), plural(days, "day"), plural(hours, "hour")]
     )
@@ -88,7 +90,7 @@ FONT = "-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
 CARD_WIDTH, CARD_HEIGHT, PAD, GRID_TOP, MAX_PITCH = 480, 160, 24, 56, 13
 
 
-def card_svg(months, days, hours, total, theme):
+def card_svg(months: int, days: int, hours: int, total: int, theme: str) -> str:
     """One square per day, column by column. Today is outlined."""
     c = PALETTES[theme]
     cols = max(1, -(-(total + 1) // 7))
@@ -122,14 +124,16 @@ def card_svg(months, days, hours, total, theme):
 """
 
 
-def write_cards(counts, total, directory):
+def write_cards(
+    counts: tuple[int, int, int], total: int, directory: str | Path
+) -> None:
     directory = Path(directory)
     directory.mkdir(exist_ok=True)
     for theme in PALETTES:
         (directory / f"clock-{theme}.svg").write_text(card_svg(*counts, total, theme))
 
 
-def update_readme(path, text):
+def update_readme(path: str | Path, text: str) -> None:
     content = Path(path).read_text()
     head, _, rest = content.partition(MARK_OPEN)
     _, _, tail = rest.partition(MARK_CLOSE)
@@ -138,7 +142,7 @@ def update_readme(path, text):
     Path(path).write_text(f"{head}{MARK_OPEN}\n{text}\n{MARK_CLOSE}{tail}")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--readme", help="rewrite the CLOCK block in this file")
     parser.add_argument(
@@ -146,7 +150,7 @@ def main():
     )
     args = parser.parse_args()
 
-    start, now = load_start(), datetime.now(timezone.utc)
+    start, now = load_start(), datetime.now(UTC)
     counts = elapsed(start, now)
     text = describe(*counts)
     if args.cards:
